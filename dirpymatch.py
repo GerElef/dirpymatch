@@ -20,9 +20,11 @@ else:
           + "are not duplicate, it copies them into the output directory")
     exit(0)
 
+
 def getPowershellPath():
     #make recursive function to find powershell.exe automatically later if powershell is not in path
     pass
+
 
 def getFiles(path):
     actualfiles = []
@@ -30,6 +32,7 @@ def getFiles(path):
         if isfile(join(path,f)):
             actualfiles.append(f)
     return actualfiles
+
 
 def sliceStr(s, length):
     substrings = []
@@ -57,6 +60,7 @@ def sliceStr(s, length):
         
     return substrings
 
+
 def sliceStrExtension(s):
     i = 0
     dotcount = 0
@@ -68,6 +72,7 @@ def sliceStrExtension(s):
         i += 1
     return [s[0:dotpos[-1]], s[dotpos[-1] + 1:len(s)]]
 
+
 def matchStrInList(l1, l2):
     if l1[-1] == l2[-1]:
         #doesn't include the extension as a substring
@@ -77,6 +82,7 @@ def matchStrInList(l1, l2):
                 if string.find(substring) != -1:
                     return True
     return False
+
             
 def getDirFileNames():
     global EXT_SLICE_FLAG
@@ -94,6 +100,7 @@ def getDirFileNames():
         dir2_split_names.append(sliceStrExtension(name) if EXT_SLICE_FLAG else sliceStr(name, LENGTH))
 
     return dir1_names, dir2_names, dir1_split_names, dir2_split_names
+
 
 def findMatches():
     matches = []
@@ -121,18 +128,18 @@ def findMatches():
 
     return matches, dir1_match_indexes, dir2_match_indexes
 
+
 def copyFiles(path, dir_names, match_indexes):
     index = 0
     for name in dir_names:
         if not (index in match_indexes):
-            print(f"Copying {name}")
-            
-            args = ["powershell", "-ExecutionPolicy", "Bypass",
-                    f"{dirname(abspath(__file__))}\\copyfiles.ps1", #copyfiles script
-                    f"{path}\\{name}",                              #dir + file to copy
+            print(f"Copying {path}\\{name} ...")
+            args = ["powershell", "-ExecutionPolicy", "Bypass", "-file",
+                    f'{dirname(abspath(__file__))}\\copyfiles.ps1', #copyfiles script
+                    f'{path}\\{name}',                              #dir + file to copy
                     outdir] 
 
-            instance = subprocess.run(args, stdout = subprocess.PIPE, stderr = subprocess.PIPE, stdin  = subprocess.PIPE)
+            instance = subprocess.run(args, shell=True)
             
         index += 1
 
