@@ -3,16 +3,16 @@ from os  import listdir
 from os.path import isfile, join, dirname, abspath
 import subprocess
 
-if len(argv) > 1:
+if len(argv) >= 5:
     dir1 = argv[1]
     dir2 = argv[2]
     outdir = argv[3]
     LENGTH = int(argv[4])
     if LENGTH < 2:
         print("Usage: python path/to/dirpymatch.py dir/ect/ory1 dir/ect/ory2 out/put/directory length -exx")
-        print("length cannot be under 2")
+        print("Length cannot be under 2")
 
-    if len(argv) == 5:
+    if len(argv) == 6:
         EXT_SLICE_FLAG = True if argv[5].upper() == "-EXX" else False
 else:
     print("Usage: python path/to/dirpymatch.py dir/ect/ory1 dir/ect/ory2 out/put/directory length -exx\n"
@@ -37,20 +37,36 @@ def sliceStr(s, length):
         increment = 1
     else:
         increment = -1
+
+    i = 0
+    dotcount = 0
+    dotpos = []
+    for c in s:
+        if c == '.':
+            dotcount += 1
+            dotpos.append(i)
+        i += 1
     
-    while(((len(s) % length) != 0) and length > 2):
+    while(((dotpos[-1] % length) != 0) and length > 2):
         length += 1
     
-    for i in range(0, len(s), length):
-        if '.' in s[i : i+length]:
-            substrings.append(s[s.find('.')+1 : len(s)])
-            break
-        
+    for i in range(0, dotpos[-1], length):
         substrings.append(s[i : i+length])
+    
+    substrings.append(s[dotpos[-1] + 1:len(s)])
+        
     return substrings
 
 def sliceStrExtension(s):
-    return s.split('.')
+    i = 0
+    dotcount = 0
+    dotpos = []
+    for c in s:
+        if c == '.':
+            dotcount += 1
+            dotpos.append(i)
+        i += 1
+    return [s[0:dotpos[-1]], s[dotpos[-1] + 1:len(s)]]
 
 def matchStrInList(l1, l2):
     if l1[-1] == l2[-1]:
@@ -63,6 +79,8 @@ def matchStrInList(l1, l2):
     return False
             
 def getDirFileNames():
+    global EXT_SLICE_FLAG
+    
     dir1_names = getFiles(dir1)
     dir2_names = getFiles(dir2)
 
@@ -107,6 +125,8 @@ def copyFiles(path, dir_names, match_indexes):
     index = 0
     for name in dir_names:
         if not (index in match_indexes):
+            print(f"Copying {name}")
+            
             args = ["powershell", "-ExecutionPolicy", "Bypass",
                     f"{dirname(abspath(__file__))}\\copyfiles.ps1", #copyfiles script
                     f"{path}\\{name}",                              #dir + file to copy
