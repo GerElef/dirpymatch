@@ -3,7 +3,7 @@ from os  import listdir
 from os.path import isfile, join, dirname, abspath
 import subprocess
 
-if len(argv) >= 5:
+if len(argv) >= 6:
     dir1 = argv[1]
     dir2 = argv[2]
     outdir = argv[3]
@@ -12,8 +12,13 @@ if len(argv) >= 5:
         print("Usage: python path/to/dirpymatch.py dir/ect/ory1 dir/ect/ory2 out/put/directory length -exx")
         print("Length cannot be under 2")
 
-    if len(argv) == 6:
-        EXT_SLICE_FLAG = True if argv[5].upper() == "-EXX" else False
+    EXT_SLICE_FLAG = True if argv[5].upper() == "-EXX" else False
+    IGNORE_FLAG = False
+
+    if len(argv) == 7:
+        IGNORE_FLAG = True
+        IGNORE_PARAMETER = argv[6]
+        
 else:
     print("Usage: python path/to/dirpymatch.py dir/ect/ory1 dir/ect/ory2 out/put/directory length -exx\n"
           + "Script takes three directory inputs: first two's contents are compared, and for all files that "
@@ -80,6 +85,10 @@ def matchStrInList(l1, l2):
         for substring in substrings:
             for string in l2[0:len(l2)-1]:
                 if string.find(substring) != -1:
+                    if IGNORE_FLAG:
+                        if substring == IGNORE_PARAMETER:
+                            continue
+                    
                     return True
     return False
 
@@ -117,13 +126,12 @@ def findMatches():
                 
                 if not (index in dir1_match_indexes):
                     dir1_match_indexes.append(index)
-                    
+                    print(f"Collision between: {dir1_names[index]} and {dir2_names[index2]}")    
                 if not (index2 in dir2_match_indexes):
                     dir2_match_indexes.append(index2)
-
-                print(split_name1)
-            
+                
             index2 += 1
+
         index += 1
 
     return matches, dir1_match_indexes, dir2_match_indexes
