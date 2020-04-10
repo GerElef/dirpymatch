@@ -56,7 +56,7 @@ def sliceStr(s, length):
         i += 1
     
     while(((dotpos[-1] % length) != 0) and length > 2):
-        length += 1
+        length += increment
     
     for i in range(0, dotpos[-1], length):
         substrings.append(s[i : i+length])
