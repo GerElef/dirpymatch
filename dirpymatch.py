@@ -111,53 +111,104 @@ def getDirFileNames():
     return dir1_names, dir2_names, dir1_split_names, dir2_split_names
 
 
+def handleCollision(name1, name2, index1, index2, prev_collisions):
+    user_input = ""
+    VALID_INPUTS = ["1", "2", "3", "4"]
+    path1flag = False
+    path2flag = False
+    for collision in prev_collisions:
+        if name1[index1] in collision:
+            path1flag = True
+        if name2[index2] in collision:
+            path2flag = True
+    
+    if path1flag and path2flag: #if both files exist, add none
+        print(f"Collision between: {name1[index1]} and {name2[index2]}. Solving by not adding anything...")
+        return 4
+    elif path1flag: #if first file exists, add the second one
+        print(f"Collision between: {name1[index1]} and {name2[index2]}. Solving by adding {name2[index2]}...")
+        return 2
+    elif path2flag: #if second file exists, add the second one
+        print(f"Collision between: {name1[index1]} and {name2[index2]}. Solving by adding {name1[index1]}...")
+        return 1
+
+    #if none of the two files exist, let the user pick
+    while(user_input not in VALID_INPUTS):
+        user_input = input(f"Collision between: {name1[index1]} and {name2[index2]}\n"
+                           +f"Enter 1 to copy {name1[index1]}.\nEnter 2 to copy {name2[index2]}.\n"
+                           + "Enter 3 to copy both.\nEnter 4 to do nothing.")
+
+    #1 equivalent to adding only the 1st file
+    #2 equivalent to adding only the 2nd file
+    #3 equivalent to returning false. do not resume (add all)
+    #4 equivalent to returning true. resume as normal (do not add)
+    return int(user_input)
+
 def findMatches():
     matches = []
-    dir1_match_indexes = []
-    dir2_match_indexes = []
+    dir1_toAdd = []
+    dir2_toAdd = []
+    prev_collisions = []
 
-    print("Matches found:")
+    print("Collisions found:")
     index  = 0
     for split_name1 in dir1_split_names:
         index2 = 0
         for split_name2 in dir2_split_names:
             if matchStrInList(split_name1, split_name2):
-                matches.append(split_name1)
-                
-                if not (index in dir1_match_indexes):
-                    dir1_match_indexes.append(index)
-                    print(f"Collision between: {dir1_names[index]} and {dir2_names[index2]}")    
-                if not (index2 in dir2_match_indexes):
-                    dir2_match_indexes.append(index2)
+                user_input = handleCollision(dir1_names, dir2_names, index, index2, prev_collisions)
+                if user_input == 4:
+                    matches.append(split_name1)
+                    
+                elif user_input == 3:
+                    prev_collisions.append(f"{dir2_names[index2]}")
+                    prev_collisions.append(f"{dir1_names[index]}")
+                    
+                    dir2_toAdd.append(f"{dir2_names[index2]}")
+                    dir1_toAdd.append(f"{dir1_names[index]}")
+                    
+                elif user_input == 2:
+                    prev_collisions.append(f"{dir2_names[index2]}")
+                    dir2_toAdd.append(f"{dir2_names[index2]}")
+                    
+                elif user_input == 1:
+                    prev_collisions.append(f"{dir1_names[index]}")
+                    dir1_toAdd.append(f"{dir1_names[index]}")
+                    
+            else:
+                if (not dir1_names[index] in dir1_toAdd) and (not dir1_names[index] in prev_collisions):
+                    print(f"Noncollision: Added {dir1_names[index]}")
+                    prev_collisions.append(f"{dir1_names[index]}")
+                    dir1_toAdd.append(f"{dir1_names[index]}")
+
+                if (not dir2_names[index2] in dir2_toAdd) and (not dir2_names[index2] in prev_collisions):
+                    print(f"Noncollision: Added {dir2_names[index2]}")
+                    prev_collisions.append(f"{dir2_names[index2]}")
+                    dir2_toAdd.append(f"{dir2_names[index2]}")
                 
             index2 += 1
 
         index += 1
 
-    return matches, dir1_match_indexes, dir2_match_indexes
+    return matches, dir1_toAdd, dir2_toAdd
 
 
-def copyFiles(path, dir_names, match_indexes):
-    index = 0
+def copyFiles(path, dir_names):#, match_indexes):
     for name in dir_names:
-        if not (index in match_indexes):
-            print(f"Copying {path}\\{name} ...")
-            args = ["powershell", "-ExecutionPolicy", "Bypass", "-file",
-                    f'{dirname(abspath(__file__))}\\copyfiles.ps1', #copyfiles script
-                    f'{path}\\{name}',                              #dir + file to copy
-                    outdir] 
-
-            instance = subprocess.run(args, shell=True)
-            
-        index += 1
+        print(f"Copying {path}\\{name} ...")
+        args = ["powershell", "-ExecutionPolicy", "Bypass", "-file",
+                f'{dirname(abspath(__file__))}\\copyfiles.ps1', #copyfiles script
+                f'{path}\\{name}',                              #dir + file to copy
+                outdir]
+        instance = subprocess.run(args, shell=True)
 
 if __name__ == "__main__":
     dir1_names, dir2_names, dir1_split_names, dir2_split_names = getDirFileNames()
 
-    matches, dir1_match_indexes, dir2_match_indexes = findMatches()
+    matches, dir1_toAdd, dir2_toAdd = findMatches()
     
     print()
     print("Starting copy...\n")
-    copyFiles(dir1, dir1_names, dir1_match_indexes)
-    copyFiles(dir2, dir2_names, dir2_match_indexes)
+    copyFiles(dir1, dir1_toAdd)
+    copyFiles(dir2, dir2_toAdd)#
     print("Copy finished")
