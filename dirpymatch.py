@@ -196,6 +196,9 @@ def findMatches():
 def copyFiles(path, dir_names):#, match_indexes):
     for name in dir_names:
         print(f"Copying {path}\\{name} ...")
+        #-ExecutionPolicy Bypass -file is from StackOverflow
+        #https://stackoverflow.com/questions/49563895/unable-to-execute-powershell-script-using-python-process-but-the-same-works-in-c/49564639
+        #Answer by: f14284 https://stackoverflow.com/users/9571050/f14284
         args = ["powershell", "-ExecutionPolicy", "Bypass", "-file",
                 f'{dirname(abspath(__file__))}\\copyfiles.ps1', #copyfiles script
                 f'{path}\\{name}',                              #dir + file to copy
